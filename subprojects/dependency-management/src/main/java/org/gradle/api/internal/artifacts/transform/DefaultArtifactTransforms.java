@@ -167,6 +167,42 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
         }
 
         @Override
+        public void addResolveActions(final Collection<Runnable> actions, final ArtifactVisitor visitor) {
+            // TODO:DAZ Handle failures
+            delegate.visit(new ArtifactVisitor() {
+                @Override
+                public void visitArtifact(AttributeContainer variant, final ResolvedArtifact artifact) {
+                    actions.add(new Runnable() {
+                        @Override
+                        public void run() {
+                            transform.transform(artifact.getFile());
+                        }
+                    });
+                }
+
+                @Override
+                public boolean includeFiles() {
+                    return visitor.includeFiles();
+                }
+
+                @Override
+                public void visitFile(ComponentArtifactIdentifier artifactIdentifier, AttributeContainer variant, final File file) {
+                    actions.add(new Runnable() {
+                        @Override
+                        public void run() {
+                            transform.transform(file);
+                        }
+                    });
+                }
+
+                @Override
+                public void visitFailure(Throwable failure) {
+
+                }
+            });
+        }
+
+        @Override
         public Set<ResolvedArtifact> getArtifacts() {
             throw new UnsupportedOperationException();
         }

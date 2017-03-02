@@ -49,6 +49,13 @@ public class CompositeArtifactSet implements ResolvedArtifactSet {
     }
 
     @Override
+    public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
+        for (ResolvedArtifactSet set : sets) {
+            set.addResolveActions(actions, visitor);
+        }
+    }
+
+    @Override
     public Set<ResolvedArtifact> getArtifacts() {
         Set<ResolvedArtifact> allArtifacts = new LinkedHashSet<ResolvedArtifact>();
         for (ResolvedArtifactSet set : sets) {

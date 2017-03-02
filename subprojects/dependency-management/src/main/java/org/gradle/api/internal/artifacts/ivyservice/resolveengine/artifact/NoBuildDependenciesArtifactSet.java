@@ -37,6 +37,11 @@ public class NoBuildDependenciesArtifactSet implements ResolvedArtifactSet {
     }
 
     @Override
+    public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
+        set.addResolveActions(actions, visitor);
+    }
+
+    @Override
     public void collectBuildDependencies(Collection<? super TaskDependency> dest) {
     }
 

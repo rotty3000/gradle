@@ -49,6 +49,10 @@ public class LocalFileDependencyBackedArtifactSet implements ResolvedArtifactSet
     }
 
     @Override
+    public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
+    }
+
+    @Override
     public Set<ResolvedArtifact> getArtifacts() {
         return Collections.emptySet();
     }
@@ -126,6 +130,10 @@ public class LocalFileDependencyBackedArtifactSet implements ResolvedArtifactSet
             this.file = file;
             this.artifactIdentifier = artifactIdentifier;
             this.variantAttributes = variantAttributes;
+        }
+
+        @Override
+        public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
         }
 
         @Override

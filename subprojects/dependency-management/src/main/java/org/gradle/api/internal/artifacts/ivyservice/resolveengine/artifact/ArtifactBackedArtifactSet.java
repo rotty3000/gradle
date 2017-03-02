@@ -45,6 +45,10 @@ public class ArtifactBackedArtifactSet implements ResolvedArtifactSet {
     }
 
     @Override
+    public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
+    }
+
+    @Override
     public Set<ResolvedArtifact> getArtifacts() {
         return artifacts;
     }
@@ -70,6 +74,10 @@ public class ArtifactBackedArtifactSet implements ResolvedArtifactSet {
         SingletonSet(AttributeContainer variantAttributes, ResolvedArtifact artifact) {
             this.variantAttributes = variantAttributes;
             this.artifact = artifact;
+        }
+
+        @Override
+        public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
         }
 
         @Override

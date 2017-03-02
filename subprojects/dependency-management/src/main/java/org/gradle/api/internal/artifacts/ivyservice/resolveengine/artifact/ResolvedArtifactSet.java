@@ -28,6 +28,11 @@ import java.util.Set;
  */
 public interface ResolvedArtifactSet {
     /**
+     * Add any actions that can be run in parallel to prepare the artifacts in this set.
+     */
+    void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor);
+
+    /**
      * Returns the resolved artifacts in this set, if any.
      */
     Set<ResolvedArtifact> getArtifacts();
@@ -43,6 +48,10 @@ public interface ResolvedArtifactSet {
     void visit(ArtifactVisitor visitor);
 
     ResolvedArtifactSet EMPTY = new ResolvedArtifactSet() {
+        @Override
+        public void addResolveActions(Collection<Runnable> actions, ArtifactVisitor visitor) {
+        }
+
         @Override
         public Set<ResolvedArtifact> getArtifacts() {
             return Collections.emptySet();
