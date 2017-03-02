@@ -17,6 +17,7 @@
 package org.gradle.api.internal.artifacts.transform;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.io.Files;
 import org.gradle.api.Buildable;
@@ -41,6 +42,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class DefaultArtifactTransforms implements ArtifactTransforms {
@@ -159,6 +161,8 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
         private final ResolvedArtifactSet delegate;
         private final AttributeContainerInternal target;
         private final Transformer<List<File>, File> transform;
+        private final Map<ResolvedArtifact, Throwable> artifactFailures = Maps.newHashMap();
+        private final Map<File, Throwable> fileFailures = Maps.newHashMap();
 
         ConsumerProvidedVariantArtifacts(ResolvedArtifactSet delegate, AttributeContainerInternal target, Transformer<List<File>, File> transform) {
             this.delegate = delegate;
@@ -175,7 +179,11 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
                     actions.add(new Runnable() {
                         @Override
                         public void run() {
-                            transform.transform(artifact.getFile());
+                            try {
+                                transform.transform(artifact.getFile());
+                            } catch (Throwable t) {
+                                artifactFailures.put(artifact, t);
+                            }
                         }
                     });
                 }
@@ -190,14 +198,17 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
                     actions.add(new Runnable() {
                         @Override
                         public void run() {
-                            transform.transform(file);
+                            try {
+                                transform.transform(file);
+                            } catch (Throwable t) {
+                                fileFailures.put(file, t);
+                            }
                         }
                     });
                 }
 
                 @Override
                 public void visitFailure(Throwable failure) {
-
                 }
             });
         }
@@ -214,7 +225,7 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
 
         @Override
         public void visit(ArtifactVisitor visitor) {
-            delegate.visit(new ArtifactTransformingVisitor(visitor, target, transform));
+            delegate.visit(new ArtifactTransformingVisitor(visitor, target, transform, artifactFailures, fileFailures));
         }
     }
 
@@ -222,15 +233,24 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
         private final ArtifactVisitor visitor;
         private final AttributeContainerInternal target;
         private final Transformer<List<File>, File> transform;
+        private final Map<ResolvedArtifact, Throwable> artifactFailures;
+        private final Map<File, Throwable> fileFailures;
 
-        private ArtifactTransformingVisitor(ArtifactVisitor visitor, AttributeContainerInternal target, Transformer<List<File>, File> transform) {
+        private ArtifactTransformingVisitor(ArtifactVisitor visitor, AttributeContainerInternal target, Transformer<List<File>, File> transform, Map<ResolvedArtifact, Throwable> artifactFailures, Map<File, Throwable> fileFailures) {
             this.visitor = visitor;
             this.target = target;
             this.transform = transform;
+            this.artifactFailures = artifactFailures;
+            this.fileFailures = fileFailures;
         }
 
         @Override
         public void visitArtifact(AttributeContainer variant, ResolvedArtifact artifact) {
+            if (artifactFailures.containsKey(artifact)) {
+                visitor.visitFailure(artifactFailures.get(artifact));
+                return;
+            }
+
             List<File> transformedFiles;
             try {
                 transformedFiles = transform.transform(artifact.getFile());
@@ -261,6 +281,11 @@ public class DefaultArtifactTransforms implements ArtifactTransforms {
 
         @Override
         public void visitFile(ComponentArtifactIdentifier artifactIdentifier, AttributeContainer variant, File file) {
+            if (fileFailures.containsKey(file)) {
+                visitor.visitFailure(fileFailures.get(file));
+                return;
+            }
+
             List<File> result;
             try {
                 result = transform.transform(file);
